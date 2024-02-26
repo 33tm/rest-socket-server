@@ -1,14 +1,23 @@
 import express, { Request, Response, json } from "express"
 import { Namespace, Server, Socket } from "socket.io"
+
 import { readdirSync, statSync } from "fs"
 import { createServer } from "http"
+
+import SchoologyAPI from "schoologyapi"
+import { verify } from "jsonwebtoken"
+
+export const schoology = new SchoologyAPI(
+    process.env.SCHOOLOGY_KEY as string,
+    process.env.SCHOOLOGY_SECRET as string
+)
 
 const rest = express()
 const server = createServer(rest)
 const socket = new Server(server)
 
-type Route = (req: Request, res: Response) => void
-type Handler = (server: Namespace, socket: Socket) => void
+export type Route = (req: Request, res: Response) => void
+export type Handler = (server: Namespace, socket: Socket) => void
 type Event = [string, Handler]
 
 const importRoutes = (root: string) => {
@@ -58,14 +67,24 @@ importEvents("src/socket").then(() => {
         const ns = socket.of(namespace)
         ns.on("connection", connection => {
             events.forEach(([event, handler]) => {
-                connection.on(event, () => handler(ns, connection))
+                connection.on(event, data => {
+                    handler(ns, connection)
+                    console.log(typeof data)
+                })
             })
         })
     })
 })
 
-// socket.of("/app").use()
+socket.of("/app").use((socket, next) => {
+    const { authorization: token } = socket.handshake.headers
+    if (!token) next(Error())
+    try {
+        socket.data = verify(token!, process.env.JWT_SECRET as string)
+        next()
+    } catch {
+        next(Error())
+    }
+})
 
 server.listen(443)
-
-export type { Route, Handler }
