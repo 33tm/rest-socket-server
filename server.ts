@@ -12,6 +12,8 @@ export const schoology = new SchoologyAPI(
     process.env.SCHOOLOGY_SECRET as string
 )
 
+export const tokens = new Map<string, { key: string, secret: string }>()
+
 const rest = express()
 const server = createServer(rest)
 const socket = new Server(server)
@@ -74,6 +76,10 @@ importEvents("routes/socket").then(() => {
             })
         })
     })
+})
+
+socket.of("/auth").on("connection", ({ id }) => {
+    socket.on("disconnect", () => tokens.delete(id))
 })
 
 socket.of("/app").use((socket, next) => {

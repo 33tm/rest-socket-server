@@ -1,4 +1,4 @@
-import { Handler } from "../../../server"
+import { Handler } from "server"
 
 export const handler: Handler = (server, socket) => {
 
