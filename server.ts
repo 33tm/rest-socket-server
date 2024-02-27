@@ -19,7 +19,7 @@ const server = createServer(rest)
 const socket = new Server(server)
 
 export type Route = (req: Request, res: Response) => void
-export type Handler = (server: Namespace, socket: Socket) => void
+export type Handler = (server: Namespace, socket: Socket, data: unknown) => void
 type Event = [string, Handler]
 
 const importRoutes = (root: string) => {
@@ -70,16 +70,18 @@ importEvents("routes/socket").then(() => {
         const ns = socket.of(namespace)
         ns.on("connection", connection => {
             events.forEach(([event, handler]) => {
-                connection.on(event, data => {
-                    handler(ns, connection)
+                connection.on(event, (...data) => {
+                    handler(ns, connection, data)
                 })
             })
         })
     })
 })
 
-socket.of("/auth").on("connection", ({ id }) => {
-    socket.on("disconnect", () => tokens.delete(id))
+socket.of("/auth").on("connection", connection => {
+    connection.on("disconnect", () => {
+        tokens.delete(connection.id)
+    })
 })
 
 socket.of("/app").use((socket, next) => {
