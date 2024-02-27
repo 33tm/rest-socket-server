@@ -25,9 +25,9 @@ const importRoutes = (root: string) => {
         const path = `${root}/${file}`
         if (statSync(path).isDirectory()) return importRoutes(path)
         if (!file.endsWith(".ts")) return
-        import(`./${path}`).then(route => {
+        import(`./${path.slice(0, -3)}`).then(route => {
             const endpoint = path
-                .slice(8, -3)
+                .slice(11, -3)
                 .replace(/\[([^[\]]+)\]/g, ":$1")
                 .replace(/\/index$/g, "") || "/"
             Object.entries(route).forEach(([method, handler]) => {
@@ -41,7 +41,7 @@ const importRoutes = (root: string) => {
 
 rest.use(json())
 
-importRoutes("src/rest")
+importRoutes("routes/rest")
 
 const namespaces: [string, Event[]][] = []
 
@@ -51,25 +51,25 @@ const importEvents = async (root: string) => {
         const path = `${root}/${file}`
         if (statSync(path).isDirectory()) return importEvents(path)
         if (!file.endsWith(".ts")) return
-        import(`./${path}`).then(({ handler }) => {
+        import(`./${path.slice(0, -3)}`).then(({ handler }) => {
             if (!handler) return
             events.push([file.slice(0, -3), handler])
         })
     }))
     if (events.length) {
-        namespaces.push([root.slice(10) || "/", events])
-        console.log(`Socket ${root.slice(10) || "/"} [${events.map(x => x[0]).join(", ")}]`)
+        const namespace = root.slice(13) || "/"
+        namespaces.push([namespace, events])
+        console.log(`Socket ${namespace} [${events.map(x => x[0]).join(", ")}]`)
     }
 }
 
-importEvents("src/socket").then(() => {
+importEvents("routes/socket").then(() => {
     namespaces.forEach(([namespace, events]) => {
         const ns = socket.of(namespace)
         ns.on("connection", connection => {
             events.forEach(([event, handler]) => {
                 connection.on(event, data => {
                     handler(ns, connection)
-                    console.log(typeof data)
                 })
             })
         })

@@ -1,4 +1,4 @@
-import { Handler, schoology } from "./../../../server"
+import { Handler, schoology } from "../../../server"
 
 export const handler: Handler = async (server, socket) => {
     const { key, secret } = await schoology
