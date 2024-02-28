@@ -5,8 +5,11 @@
         "outDir": "build",
         "paths": {
             "server": [
-                "./server"
+                "./src/server.ts"
             ]
         }
-    }
+    },
+    "include": [
+        "src/**/*"
+    ]
 }

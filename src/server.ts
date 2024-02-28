@@ -8,8 +8,8 @@ import SchoologyAPI from "schoologyapi"
 import { verify } from "jsonwebtoken"
 
 export const schoology = new SchoologyAPI(
-    process.env.SCHOOLOGY_KEY as string,
-    process.env.SCHOOLOGY_SECRET as string
+    process.env.SCHOOLOGY_KEY!,
+    process.env.SCHOOLOGY_SECRET!
 )
 
 export const tokens = new Map<string, { key: string, secret: string }>()
@@ -27,9 +27,9 @@ const importRoutes = (root: string) => {
         const path = `${root}/${file}`
         if (statSync(path).isDirectory()) return importRoutes(path)
         if (!file.endsWith(".ts")) return
-        import(`./${path.slice(0, -3)}`).then(route => {
+        import(`./${path.slice(4, -3)}`).then(route => {
             const endpoint = path
-                .slice(11, -3)
+                .slice(8, -3)
                 .replace(/\[([^[\]]+)\]/g, ":$1")
                 .replace(/\/index$/g, "") || "/"
             Object.entries(route).forEach(([method, handler]) => {
@@ -43,7 +43,7 @@ const importRoutes = (root: string) => {
 
 rest.use(json())
 
-importRoutes("routes/rest")
+importRoutes("src/rest")
 
 const namespaces: [string, Event[]][] = []
 
@@ -53,24 +53,24 @@ const importEvents = async (root: string) => {
         const path = `${root}/${file}`
         if (statSync(path).isDirectory()) return importEvents(path)
         if (!file.endsWith(".ts")) return
-        import(`./${path.slice(0, -3)}`).then(({ handler }) => {
+        import(`./${path.slice(4, -3)}`).then(({ handler }) => {
             if (!handler) return
             events.push([file.slice(0, -3), handler])
         })
     }))
     if (events.length) {
-        const namespace = root.slice(13) || "/"
+        const namespace = root.slice(10) || "/"
         namespaces.push([namespace, events])
         console.log(`Socket ${namespace} [${events.map(x => x[0]).join(", ")}]`)
     }
 }
 
-importEvents("routes/socket").then(() => {
+importEvents("src/socket").then(() => {
     namespaces.forEach(([namespace, events]) => {
         const ns = socket.of(namespace)
         ns.on("connection", connection => {
             events.forEach(([event, handler]) => {
-                connection.on(event, (...data) => {
+                connection.on(event, data => {
                     handler(ns, connection, data)
                 })
             })
@@ -88,7 +88,7 @@ socket.of("/app").use((socket, next) => {
     const { authorization: token } = socket.handshake.headers
     if (!token) next(Error())
     try {
-        socket.data = verify(token!, process.env.JWT_SECRET as string)
+        socket.data = verify(token!, process.env.JWT_SECRET!)
         next()
     } catch {
         next(Error())
