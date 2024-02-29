@@ -49,11 +49,11 @@ const namespaces: [string, Event[]][] = []
 
 const importEvents = async (root: string) => {
     const events: Event[] = []
-    await Promise.all(readdirSync(root).map(file => {
+    await Promise.all(readdirSync(root).map(async file => {
         const path = `${root}/${file}`
         if (statSync(path).isDirectory()) return importEvents(path)
         if (!file.endsWith(".ts")) return
-        import(`./${path.slice(4, -3)}`).then(({ handler }) => {
+        await import(`./${path.slice(4, -3)}`).then(({ handler }) => {
             if (!handler) return
             events.push([file.slice(0, -3), handler])
         })
