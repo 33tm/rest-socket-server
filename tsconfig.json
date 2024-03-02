@@ -3,6 +3,9 @@
         "strict": true,
         "esModuleInterop": true,
         "outDir": "build",
+        "target": "ESNext",
+        "module": "NodeNext",
+        "moduleResolution": "NodeNext",
         "paths": {
             "server": [
                 "./src/server.ts"
