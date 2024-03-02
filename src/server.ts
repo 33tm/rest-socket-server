@@ -18,6 +18,15 @@ const rest = express()
 const server = createServer(rest)
 const socket = new Server(server)
 
+rest.use(json())
+
+if (process.env.NODE_ENV === "production") {
+    import("@socket.io/cluster-adapter")
+        .then(({ createAdapter }) => socket.adapter(createAdapter()))
+    import("@socket.io/sticky")
+        .then(({ setupWorker }) => setupWorker(socket))
+}
+
 export type Route = (req: Request, res: Response) => void
 export type Handler = (server: Namespace, socket: Socket, data: unknown) => void
 type Event = [string, Handler]
@@ -40,8 +49,6 @@ const importRoutes = (root: string) => {
         })
     })
 }
-
-rest.use(json())
 
 importRoutes("src/rest")
 
