@@ -1,6 +1,6 @@
 {
     "scripts": {
-        "dev": "tsx --watch src/server",
+        "dev": "tsx watch src/server src/**/*",
         "build": "tsc && tsc-alias",
         "start": "node build/server"
     },
