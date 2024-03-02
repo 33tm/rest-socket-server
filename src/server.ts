@@ -18,8 +18,6 @@ const rest = express()
 const server = createServer(rest)
 const socket = new Server(server)
 
-rest.use(json())
-
 if (process.env.NODE_ENV === "production") {
     import("@socket.io/cluster-adapter")
         .then(({ createAdapter }) => socket.adapter(createAdapter()))
@@ -49,6 +47,8 @@ const importRoutes = (root: string) => {
         })
     })
 }
+
+rest.use(json())
 
 importRoutes("src/rest")
 
