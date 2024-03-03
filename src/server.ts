@@ -1,5 +1,6 @@
 import express, { Request, Response, json } from "express"
 import { Namespace, Server, Socket } from "socket.io"
+import cors from "cors"
 
 import { readdirSync, statSync } from "fs"
 import { createServer } from "http"
@@ -16,7 +17,13 @@ export const tokens = new Map<string, { key: string, secret: string }>()
 
 const rest = express()
 const server = createServer(rest)
-const socket = new Server(server)
+const socket = new Server(server, {
+    cors: {
+        origin: ["http://localhost:3000"]
+    }
+})
+
+rest.use(json(), cors({ origin: ["http://localhost:3000"] }))
 
 if (process.env.NODE_ENV === "production") {
     import("@socket.io/cluster-adapter")
@@ -47,8 +54,6 @@ const importRoutes = (root: string) => {
         })
     })
 }
-
-rest.use(json())
 
 importRoutes("src/rest")
 
@@ -92,10 +97,10 @@ socket.of("/auth").on("connection", connection => {
 })
 
 socket.of("/app").use((socket, next) => {
-    const { authorization: token } = socket.handshake.headers
+    const { token } = socket.handshake.auth
     if (!token) next(Error())
     try {
-        socket.data = verify(token!, process.env.JWT_SECRET!)
+        socket.data = verify(token, process.env.JWT_SECRET!)
         next()
     } catch {
         next(Error())
