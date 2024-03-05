@@ -15,15 +15,13 @@ export const schoology = new SchoologyAPI(
 
 export const tokens = new Map<string, { key: string, secret: string }>()
 
+const config = { origin: ["http://localhost:3000"] }
+
 const rest = express()
 const server = createServer(rest)
-const socket = new Server(server, {
-    cors: {
-        origin: ["http://localhost:3000"]
-    }
-})
+const socket = new Server(server, { cors: config })
 
-rest.use(json(), cors({ origin: ["http://localhost:3000"] }))
+rest.use(json(), cors(config))
 
 if (process.env.NODE_ENV === "production") {
     import("@socket.io/cluster-adapter")
@@ -73,7 +71,7 @@ const importEvents = async (root: string) => {
     if (events.length) {
         const namespace = root.slice(10) || "/"
         namespaces.push([namespace, events])
-        console.log(`Socket ${namespace} [${events.map(x => x[0]).join(", ")}]`)
+        console.log(`Socket ${namespace} [${events.map(i => i[0]).join(", ")}]`)
     }
 }
 
